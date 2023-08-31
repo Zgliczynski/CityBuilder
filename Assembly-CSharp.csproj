@@ -55,6 +55,12 @@
   <ItemGroup>
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\Scripts\SimpleCameraController.cs" />
+    <Compile Include="Assets\Scripts\CameraMovement.cs" />
+    <Compile Include="Assets\Scripts\GridSearch.cs" />
+    <Compile Include="Assets\Scripts\Grid.cs" />
+    <Compile Include="Assets\Scripts\AudioPlayer.cs" />
+    <Compile Include="Assets\Scripts\InputManager.cs" />
+    <Compile Include="Assets\Scripts\GameManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
