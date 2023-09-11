@@ -1,3 +1,4 @@
+using SVS;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,7 +12,9 @@ public class RoadManager : MonoBehaviour
     public List<Vector3Int> temporaryPlacementPosition = new List<Vector3Int>();
     public List<Vector3Int> roadPositionToRecheck = new List<Vector3Int>();
 
-    public GameObject roadStraight;
+    private Vector3Int startPosition;
+    private bool placementMode = false;
+
 
     private void Start()
     {
@@ -26,10 +29,40 @@ public class RoadManager : MonoBehaviour
         if (placementManager.CheckIfPositionIsFree(position) == false)
             return;
 
-        temporaryPlacementPosition.Clear();
-        temporaryPlacementPosition.Add(position);
+        if (placementMode == false)
+        {
+            temporaryPlacementPosition.Clear();
+            roadPositionToRecheck.Clear();
 
-        placementManager.PlaceTemporaryStructure(position, roadStraight, CellType.Road);
+            placementMode = true;
+            startPosition = position;
+
+            temporaryPlacementPosition.Add(position);
+
+            placementManager.PlaceTemporaryStructure(position, roadFixer.deadEnd, CellType.Road);
+
+        }
+        else
+        {
+            placementManager.RemoveAllTemporaryStructures();
+            temporaryPlacementPosition.Clear();
+
+            foreach (var positionToFix in roadPositionToRecheck)
+            {
+                roadFixer.FixRoadAtPosition(placementManager, positionToFix);
+            }
+
+            roadPositionToRecheck.Clear();
+
+            temporaryPlacementPosition = placementManager.GetPathBetween(startPosition, position);
+
+            foreach (var temporaryPosition in temporaryPlacementPosition)
+            {
+                if (placementManager.CheckIfPositionIsFree(temporaryPosition) == false)
+                    continue;
+                placementManager.PlaceTemporaryStructure(temporaryPosition, roadFixer.deadEnd, CellType.Road);
+            }
+        }
 
         FixRoadPrefabs();
     }
@@ -42,7 +75,10 @@ public class RoadManager : MonoBehaviour
             var neighbours = placementManager.GetNeighbourTypesFor(temporaryPosition, CellType.Road);
             foreach (var roadposition in neighbours)
             {
-                roadPositionToRecheck.Add(roadposition);
+                if (roadPositionToRecheck.Contains(roadposition) == false)
+                {
+                    roadPositionToRecheck.Add(roadposition);
+                }
             }
         }
 
@@ -51,5 +87,17 @@ public class RoadManager : MonoBehaviour
             roadFixer.FixRoadAtPosition(placementManager, positionToFix);
         }
 
+    }
+
+    public void FinishPlacingRoad()
+    {
+        placementMode = false;
+        placementManager.AddTemporaryStructuresToStructureDictionary();
+        if(temporaryPlacementPosition.Count > 0)
+        {
+            AudioPlayer.instance.PlayPlacementSound();
+        }
+        temporaryPlacementPosition.Clear();
+        startPosition = Vector3Int.zero;
     }
 }

@@ -9,6 +9,7 @@ public class PlacementManager : MonoBehaviour
     Grid placementGrid;
 
     private Dictionary<Vector3Int, StructureModel> temporaryRoadObjects = new Dictionary<Vector3Int, StructureModel>();
+    private Dictionary<Vector3Int, StructureModel> structureDictionary = new Dictionary<Vector3Int, StructureModel>();
 
     private void Start()
     {
@@ -68,11 +69,48 @@ public class PlacementManager : MonoBehaviour
         return structureModel;
     }
 
+    internal List<Vector3Int> GetPathBetween(Vector3Int startPosition, Vector3Int endPosition)
+    {
+        var resultPath = GridSearch.AStarSearch(placementGrid, new Point(startPosition.x, startPosition.z), new Point(endPosition.x, endPosition.z));
+
+        List<Vector3Int> path = new List<Vector3Int>();
+
+        foreach (Point point in resultPath)
+        {
+            path.Add(new Vector3Int(point.X, 0, point.Y));
+        }
+        return path;
+    }
+
+    internal void RemoveAllTemporaryStructures()
+    {
+        foreach (var structure in temporaryRoadObjects.Values)
+        {
+            var position = Vector3Int.RoundToInt(structure.transform.position);
+            placementGrid[position.x, position.z] = CellType.Empty;
+            Destroy(structure.gameObject);
+        }
+        temporaryRoadObjects.Clear();
+    }
+
+    internal void AddTemporaryStructuresToStructureDictionary()
+    {
+        foreach (var structure in temporaryRoadObjects)
+        {
+            structureDictionary.Add(structure.Key, structure.Value);
+        }
+        temporaryRoadObjects.Clear();
+    }
+
     public void ModifyStructureModel(Vector3Int position, GameObject newModel, Quaternion rotation)
     {
         if (temporaryRoadObjects.ContainsKey(position))
         {
             temporaryRoadObjects[position].SwapModel(newModel, rotation);
+        }
+        else if (structureDictionary.ContainsKey(position))
+        {
+            structureDictionary[position].SwapModel(newModel, rotation);
         }
     }
 }
